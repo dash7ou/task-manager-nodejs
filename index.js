@@ -11,13 +11,15 @@ const port = process.env.PORT;
 app.use(express.json());
 app.use("/users", users);
 app.use("/tasks", tasks);
-mongoose.connect(process.env.MONGODB_URL, {
-  reconnectTries: 100,
-  reconnectInterval: 500,
-  autoReconnect: true,
-  useNewUrlParser: true,
-  dbName: "test"
-});
+mongoose
+  .connect(process.env.MONGODB_URL, {
+    reconnectTries: 100,
+    reconnectInterval: 500,
+    autoReconnect: true,
+    useNewUrlParser: true,
+    dbName: "test"
+  })
+  .catch(err => console.log("Mongo connection error", err));
 
 app.listen(port, () => {
   console.log(`Server startup in port ${port}`);
