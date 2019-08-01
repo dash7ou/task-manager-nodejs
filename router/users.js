@@ -15,10 +15,12 @@ const {
 router.post("/", async (req, res) => {
   const { error } = validateUser(req.body);
   if (error) return res.send(error.details[0].message);
+
   const user = new User(req.body);
 
   try {
     await user.save();
+    console.log(user);
     const token = user.generateAuthToken();
     sendWelcomeEmail(user.email, user.name);
     res
