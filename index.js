@@ -12,9 +12,11 @@ app.use(express.json());
 app.use("/users", users);
 app.use("/tasks", tasks);
 mongoose.connect(process.env.MONGODB_URL, {
+  reconnectTries: 100,
+  reconnectInterval: 500,
+  autoReconnect: true,
   useNewUrlParser: true,
-  useCreateIndex: true,
-  useFindAndModify: false
+  dbName: "test"
 });
 
 app.listen(port, () => {
