@@ -1,3 +1,6 @@
-module.exports = function(error, req, res, next) {
-  res.status(500).send("Some thing filed sorry try another time", error);
+const winston = require("winston");
+
+module.exports = function(err, req, res, next) {
+  winston.error(err.message, err);
+  res.status(500).send("Some thing filed sorry try another time", err);
 };
