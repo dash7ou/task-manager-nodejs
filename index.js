@@ -11,13 +11,11 @@ const port = process.env.PORT;
 
 mongoose
   .connect(process.env.MONGODB_URL, {
-    reconnectTries: 100,
-    reconnectInterval: 500,
-    autoReconnect: true,
-    useNewUrlParser: true,
-    dbName: "test"
+    useNewUrlParser: true
   })
+  .then(_ => console.log(`connect to mongodb...`))
   .catch(err => console.log("Mongo connection error", err));
+mongoose.set("useCreateIndex", true);
 
 app.use(express.json());
 app.use("/users", users);
