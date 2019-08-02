@@ -1,49 +1,21 @@
 const express = require("express");
 const app = express();
-const mongoose = require("mongoose");
-const users = require("./router/users");
-const tasks = require("./router/tasks");
-// const Joi = require("joi");
-// Joi.objectId = require("joi-objectid")(Joi);
-const error = require("./middleware/error");
 const winston = require("winston");
-require("winston-mongodb");
+
+require("./startup/routes")(app);
+require("./startup/db")();
+require("./startup/logging")();
 
 const port = process.env.PORT;
 
-//handle error in file .log
-winston.add(winston.transports.File, { filename: "logfile.log" });
+//if you want to try error and winston delete commit error below
+// throw new Error("Something failed during startup app :("); //solve that we use process.on
 
-//handle error in db
-winston.add(winston.transports.MongoDB, {
-  db: process.env.MONGODB_URL,
-  level: "info"
-});
-
-winston.handleExceptions(
-  new winston.transports.File({ filename: "uncaughtException.log" })
-);
-
-//handle un handled rejection
-process.on("unhandledRejection", err => {
-  throw err;
-});
-
-mongoose
-  .connect(process.env.MONGODB_URL, {
-    useNewUrlParser: true
-  })
-  .then(_ => console.log(`connect to mongodb...`))
-  .catch(err => console.log("Mongo connection error", err));
-mongoose.set("useCreateIndex", true);
-
-app.use(express.json());
-app.use("/users", users);
-app.use("/tasks", tasks);
-app.use(error);
+// const p = Promise.reject(new Error("something failed in application"));
 
 app.listen(port, () => {
   console.log(`Server startup in port ${port}`);
+  winston.info(`Server startup in port ${port}`);
 });
 
 // const { Task } = require("./model/task");

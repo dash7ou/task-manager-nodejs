@@ -17,11 +17,15 @@ router.post("/", async (req, res, next) => {
   const { error } = validateUser(req.body);
   if (error) return res.send(error.details[0].message);
 
+  const oldUser = await User.findOne({ email: req.body.email });
+  // console.log(oldUser);
+  if (oldUser) return res.status(400).send("This user already exist :p");
+
   const user = new User(req.body);
 
   try {
     await user.save();
-    console.log(user);
+    // console.log(user);
     const token = user.generateAuthToken();
     sendWelcomeEmail(user.email, user.name);
     res
