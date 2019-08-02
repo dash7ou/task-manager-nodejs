@@ -5,12 +5,10 @@ const users = require("./router/users");
 const tasks = require("./router/tasks");
 const Joi = require("joi");
 Joi.objectId = require("joi-objectid")(Joi);
+const error = require("./middleware/error");
 
 const port = process.env.PORT;
 
-app.use(express.json());
-app.use("/users", users);
-app.use("/tasks", tasks);
 mongoose
   .connect(process.env.MONGODB_URL, {
     reconnectTries: 100,
@@ -20,6 +18,11 @@ mongoose
     dbName: "test"
   })
   .catch(err => console.log("Mongo connection error", err));
+
+app.use(express.json());
+app.use("/users", users);
+app.use("/tasks", tasks);
+app.use(error);
 
 app.listen(port, () => {
   console.log(`Server startup in port ${port}`);

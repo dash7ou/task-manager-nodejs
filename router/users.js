@@ -3,6 +3,7 @@ const router = express.Router();
 const auth = require("../middleware/auth");
 const multer = require("multer");
 const { sendWelcomeEmail, sendDeleteEmail } = require("../emails/account");
+const asyncMiddleware = require("../middleware/async");
 
 const {
   validateLogin,
@@ -12,7 +13,7 @@ const {
   findByCredentials
 } = require("../model/user");
 
-router.post("/", async (req, res) => {
+router.post("/", async (req, res, next) => {
   const { error } = validateUser(req.body);
   if (error) return res.send(error.details[0].message);
 
@@ -28,11 +29,11 @@ router.post("/", async (req, res) => {
       .status(201)
       .send(user);
   } catch (err) {
-    res.status(400).send(err);
+    next(err);
   }
 });
 
-router.post("/login", async (req, res) => {
+router.post("/login", async (req, res, next) => {
   const error = validateLogin(req.body);
   if (!error) return res.status(400).send(error.details[0].message);
 
@@ -44,14 +45,18 @@ router.post("/login", async (req, res) => {
     const token = user.generateAuthToken();
     res.header("x-auth-token", token).send(user);
   } catch (err) {
-    res.status(400).send(err);
+    next(err);
   }
 });
 
-router.get("/me", auth, async (req, res) => {
-  const user = await User.findById(req.user._id).select("-password");
-  res.send(user);
-});
+router.get(
+  "/me",
+  auth,
+  asyncMiddleware(async (req, res) => {
+    const user = await User.findById(req.user._id).select("-password");
+    res.send(user);
+  })
+);
 
 const upload = multer({
   // dest: "avatars",
@@ -73,31 +78,38 @@ router.post("/me/avatar", auth, upload.single("avatar"), async (req, res) => {
   const user = await User.findById(req.user._id);
   user.avatar = req.file.buffer;
   await user.save();
-  console.log(user.avatar);
+  // console.log(user.avatar);
   res.status(200).send();
 }),
   (error, req, res, next) => {
     res.status(400).send({ error: error.message });
   };
 
-router.delete("/me/avatar", auth, async (req, res) => {
-  const user = await User.findById(req.user._id);
-  // await user.deleteOne({});
-  user.avatar = undefined;
-  await user.save();
-  res.send();
-});
+router.delete(
+  "/me/avatar",
+  auth,
+  asyncMiddleware(async (req, res) => {
+    const user = await User.findById(req.user._id);
+    // await user.deleteOne({});
+    user.avatar = undefined;
+    await user.save();
+    res.send();
+  })
+);
 
-router.get("/:id/avatar", async (req, res) => {
-  const user = await User.findById(req.params.id);
-  if (!user) res.status(400).send("no user with this id sorry");
+router.get(
+  "/:id/avatar",
+  asyncMiddleware(async (req, res) => {
+    const user = await User.findById(req.params.id);
+    if (!user) res.status(400).send("no user with this id sorry");
 
-  const avatar = user.avatar;
-  if (!avatar) res.status(400).send("this user have not profile photo sorry");
+    const avatar = user.avatar;
+    if (!avatar) res.status(400).send("this user have not profile photo sorry");
 
-  res.set("Content-Type", "image/jpg");
-  res.status(200).send(avatar);
-});
+    res.set("Content-Type", "image/jpg");
+    res.status(200).send(avatar);
+  })
+);
 
 // router.get("/:id", async (req, res) => {
 //   try {
@@ -110,7 +122,7 @@ router.get("/:id/avatar", async (req, res) => {
 //   }
 // });
 
-router.put("/me", auth, async (req, res) => {
+router.put("/me", auth, async (req, res, next) => {
   const updates = Object.keys(req.body);
   const allowedUpdates = ["name", "email", "password", "age"];
 
@@ -137,11 +149,11 @@ router.put("/me", auth, async (req, res) => {
     await user.save();
     res.send(user);
   } catch (err) {
-    res.status(500).send(err);
+    next(err);
   }
 });
 
-router.delete("/me", auth, async (req, res) => {
+router.delete("/me", auth, async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id);
 
@@ -153,7 +165,7 @@ router.delete("/me", auth, async (req, res) => {
     sendDeleteEmail(user.email, user.name);
     res.send(user);
   } catch (err) {
-    res.status(500).send(err);
+    next(err);
   }
 });
 
