@@ -46,10 +46,14 @@ router.post("/login", async (req, res, next) => {
       req.body.email,
       req.body.password
     );
+
     const token = user.generateAuthToken();
-    res.header("x-auth-token", token).send(user);
+    res
+      .header("x-auth-token", token)
+      .status(200)
+      .send(user);
   } catch (err) {
-    next(err);
+    res.status(401).send(err);
   }
 });
 
@@ -161,13 +165,14 @@ router.delete("/me", auth, async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id);
 
+    if (!user)
+      return res
+        .status(404)
+        .send("no fucking user with this id mother fucker :p");
+
     await user.remove();
-    // if (!user)
-    //   return res
-    //     .status(404)
-    //     .send("no fucking user with this id mother fucker :p");
     sendDeleteEmail(user.email, user.name);
-    res.send(user);
+    res.status(200).send(user);
   } catch (err) {
     next(err);
   }

@@ -16,6 +16,7 @@ router.post(
       ...req.body,
       owner: req.user._id
     });
+    // console.log(task);
     await task.save();
     res.status(200).send(task);
   })
